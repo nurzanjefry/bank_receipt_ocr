@@ -1,82 +1,126 @@
-# 🧾 Bank Receipt OCR
+# OCR Extraction with PaddleOCR
 
-This project extracts **structured transaction details** from bank receipt images using [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR).  
-It automates the process of turning raw OCR text into clean, machine‑readable data for downstream use (validation, storage, or integration into financial systems).
+This project demonstrates how to use [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) inside a Jupyter Notebook to extract structured information from images (e.g., receipts, transaction slips, or bank confirmations).  
 
----
-
-## 🚀 Features
-- OCR text extraction from receipt images (`.png`, `.jpg`)  
-- Handles rotated or skewed text lines with orientation detection  
-- Prints raw OCR results with confidence scores and bounding boxes  
-- Maps recognized text into a **structured dictionary** of key fields:  
-  - Status  
-  - Reference number  
-  - Transaction date  
-  - Amount  
-  - Beneficiary Name  
-  - Receiving Bank  
-  - Beneficiary Account Number  
-  - Recipient Reference  
+The notebook processes an image using OCR, then maps detected text into a structured dictionary with specific keys such as **Status**, **Transaction date**, and **Beneficiary Name**.
 
 ---
 
-## 📂 Project Structure
-bank_receipt_ocr/ │ ├── converted_image.png # Example input image ├── main.py # OCR + structuring script ├── requirements.txt # Python dependencies └── README.md # Project documentation
+## Features
 
-Code
+- Performs OCR (Optical Character Recognition) on images using PaddleOCR.
+- Supports English text extraction (`lang='en'`).
+- Filters and structures OCR results into a key-value dictionary.
+- Prints both **raw OCR results** (with confidence scores and bounding boxes) and **structured output**.
 
 ---
 
-## ⚙️ Installation
+## Example Code
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/nurzanjefry/bank_receipt_ocr.git
-   cd bank_receipt_ocr
-Install dependencies:
+```python
+from paddleocr import PaddleOCR
 
-bash
-pip install -r requirements.txt
-(Optional) Install GPU version of PaddlePaddle for faster inference:
+ocr = PaddleOCR(use_textline_orientation=True, lang='en')
+img_path = "converted_image.png"
 
-bash
-pip install paddlepaddle-gpu
-▶️ Usage
-Run the script with your receipt image:
+results = ocr.predict(img_path)
 
-bash
-python main.py
-Example Output
-python
+structured = {}
+
+# Define the keys you care about
+keys = [
+    "Status:",
+    "Reference number:",
+    "Transaction date:",
+    "Amount:",
+    "Beneficiary Name:",
+    "Receiving Bank:",
+    "Beneficiary Account Number:",
+    "Recipient Reference:"
+]
+
+for res in results:
+    texts = res['rec_texts']
+    scores = res['rec_scores']
+    polys = res['rec_polys']
+
+    # Print raw OCR results
+    for text, score, box in zip(texts, scores, polys):
+        print(f"{text} (conf: {score:.2f}) at {box.tolist()}")
+
+    # Build structured dictionary
+    for i, text in enumerate(texts):
+        if text in keys and i + 1 < len(texts):
+            structured[text.replace(":", "").strip()] = texts[i+1]
+
+print("\nStructured output:")
+print(structured)
+```
+
+---
+
+## Example Output
+
+**Raw OCR results (snippet):**
+```
+Status: (conf: 0.98) at [[50,20],[200,20],[200,50],[50,50]]
+Successful (conf: 0.97) at [[210,20],[350,20],[350,50],[210,50]]
+...
+```
+
+**Structured output:**
+```python
 {
-  "Status": "Successful",
-  "Reference number": "8729043745",
-  "Transaction date": "17 Nov 2020 18:20:41",
-  "Amount": "RM50.00",
-  "Beneficiary Name": "ADVANCE CELL CORPORATION SDN. BHD.",
-  "Receiving Bank": "CIMB BANK BERHAD",
-  "Beneficiary Account Number": "8600131277",
-  "Recipient Reference": "rne ventures"
+    "Status": "Successful",
+    "Reference number": "123456789",
+    "Transaction date": "2025-09-18",
+    "Amount": "RM 250.00",
+    "Beneficiary Name": "John Doe",
+    "Receiving Bank": "ABC Bank",
+    "Beneficiary Account Number": "123-456-789",
+    "Recipient Reference": "Invoice 001"
 }
-🛠 Requirements
-Python 3.8+
+```
 
-PaddleOCR
+---
 
-PaddlePaddle
+## Requirements
 
-Install via:
+- Python 3.8+
+- Jupyter Notebook
+- PaddleOCR
 
-bash
+Install dependencies:
+```bash
 pip install paddleocr
-pip install paddlepaddle -U
-📌 Notes
-Works best with clear, high‑resolution images.
+pip install paddlepaddle  # required backend
+```
 
-For large‑scale use, consider batch processing and GPU acceleration.
+---
 
-Extendable: add new keys to the keys list in main.py to capture more fields.
+## How to Use
 
-📜 License
-This project is licensed under the MIT License. See LICENSE for details.
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/your-username/your-repo-name.git
+   ```
+2. Navigate to the project folder and launch Jupyter:
+   ```bash
+   jupyter notebook
+   ```
+3. Open the notebook and run the cells.
+4. Replace `converted_image.png` with your own image.
+
+---
+
+## Notes
+
+- Accuracy depends on image quality and clarity of text.
+- You can expand the `keys` list if you need to capture more fields.
+- Works best with structured documents like receipts, invoices, or bank slips.
+
+---
+
+## License
+
+This project is released under the MIT License.
